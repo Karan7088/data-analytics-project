@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sales Performance Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background-color: cyan;
+            color: black;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #004d99;
+            color: white;
+        }
+        #dashboard {
+            margin: 20px;
+        }
+        img {
+            width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Interactive Sales Performance Dashboard</h1>
+    </header>
+    <img src="https://via.placeholder.com/1200x400.png?text=Data+Analytics+Visualization" alt="Data Analytics Visualization">
+    <input type="file" id="fileInput" accept="application/json" style="display: block; margin: 20px auto; padding: 10px;">
+    <div id="dashboard">
+        <div id="salesByProduct" style="width: 100%; height: 400px;"></div>
+        <div id="salesTrend" style="width: 100%; height: 400px;"></div>
+        <img src="https://via.placeholder.com/1200x300.png?text=Data+Trends" alt="Data Trends">
+        <div id="salesByLocation" style="width: 100%; height: 400px;"></div>
+        <div id="averageOrderValue" style="width: 100%; height: 100px;"></div>
+        <div id="paymentMethodDist" style="width: 100%; height: 400px;"></div>
+        <img src="https://via.placeholder.com/1200x300.png?text=Top+Performers" alt="Top Performers">
+        <div id="topCustomers" style="width: 100%; height: 400px;"></div>
+    </div>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = JSON.parse(e.target.result);
+                generateDashboard(data);
+            };
+            reader.readAsText(file);
+        });
+
+        function generateDashboard(data) {
+            const products = {};
+            const dates = {};
+            const locations = {};
+            const paymentMethods = {};
+            const customers = {};
+            let totalRevenue = 0;
+            let totalOrders = data.length;
+
+            data.forEach(row => {
+                products[row.Product] = (products[row.Product] || 0) + row.TotalPrice;
+                dates[row.Date] = (dates[row.Date] || 0) + row.TotalPrice;
+                locations[row.StoreLocation] = (locations[row.StoreLocation] || 0) + row.TotalPrice;
+                paymentMethods[row.PaymentMethod] = (paymentMethods[row.PaymentMethod] || 0) + 1;
+                customers[row.CustomerName] = (customers[row.CustomerName] || 0) + row.TotalPrice;
+                totalRevenue += row.TotalPrice;
+            });
+
+            Plotly.newPlot('salesByProduct', [{
+                x: Object.keys(products),
+                y: Object.values(products),
+                type: 'bar',
+                marker: { color: 'rgba(55, 128, 191, 0.7)' },
+            }], {
+                title: 'Total Sales by Product',
+            });
+
+            Plotly.newPlot('salesTrend', [{
+                x: Object.keys(dates),
+                y: Object.values(dates),
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: 'rgba(44, 160, 44, 0.7)' },
+            }], {
+                title: 'Sales Trend Over Time',
+            });
+
+            Plotly.newPlot('salesByLocation', [{
+                x: Object.keys(locations),
+                y: Object.values(locations),
+                type: 'bar',
+                marker: { color: 'rgba(255, 127, 14, 0.7)' },
+            }], {
+                title: 'Revenue by Store Location',
+            });
+
+            const aov = totalRevenue / totalOrders;
+            document.getElementById('averageOrderValue').innerHTML = `<h2>Average Order Value: $${aov.toFixed(2)}</h2>`;
+
+            Plotly.newPlot('paymentMethodDist', [{
+                labels: Object.keys(paymentMethods),
+                values: Object.values(paymentMethods),
+                type: 'pie',
+            }], {
+                title: 'Payment Method Distribution',
+            });
+
+            const topCustomers = Object.entries(customers).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            Plotly.newPlot('topCustomers', [{
+                x: topCustomers.map(customer => customer[0]),
+                y: topCustomers.map(customer => customer[1]),
+                type: 'bar',
+                marker: { color: 'rgba(219, 64, 82, 0.7)' },
+            }], {
+                title: 'Top Customers by Total Spend',
+            });
+        }
+    </script>
+</body>
+</html>
